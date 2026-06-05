@@ -9,7 +9,6 @@ export default function ResultPanel({
   bus,
   weather,
   walk,
-  walkWarning,
   recommendation,
 }) {
   const hasResults = !loading && bus && weather && recommendation;
@@ -20,7 +19,7 @@ export default function ResultPanel({
       {error && !loading && <p className="status-message status-error">{error}</p>}
       {hasResults && (
         <>
-          <BusInfo bus={bus} walk={walk} walkWarning={walkWarning} />
+          <BusInfo bus={bus} walk={walk} />
           <WeatherInfo weather={weather} />
           <Recommendation recommendation={recommendation} />
         </>

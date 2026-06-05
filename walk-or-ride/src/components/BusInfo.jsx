@@ -1,4 +1,4 @@
-export default function BusInfo({ bus, walk, walkWarning }) {
+export default function BusInfo({ bus, walk }) {
   return (
     <div className="wireframe-block">
       <div className="wireframe-block__title">Bus/Link</div>
@@ -14,10 +14,8 @@ export default function BusInfo({ bus, walk, walkWarning }) {
         {walk ? (
           <p>
             Walk: {walk.minutes} min ({walk.distance})
-            {walk.estimated ? ' — estimated' : ''}
           </p>
         ) : null}
-        {walkWarning ? <p className="status-message">{walkWarning}</p> : null}
       </div>
     </div>
   );

@@ -94,23 +94,16 @@ export function useRouteSearch() {
         const weather = weatherResult.value;
 
         let walk = null;
-        let walkWarning = null;
 
         if (walkResult.status === 'fulfilled') {
           walk = walkResult.value;
-          if (walk.estimated) {
-            walkWarning =
-              'Walking time is an estimate (straight-line). Google walking directions were unavailable.';
-          }
-        } else {
-          walkWarning = friendlyError(walkResult.reason);
         }
 
         const recommendation = recommend(walk?.minutes ?? null, bus.arrivalMinutes, weather.condition, {
           walkUnavailable: !walk,
         });
 
-        const nextResults = { walk, bus, weather, recommendation, walkWarning };
+        const nextResults = { walk, bus, weather, recommendation };
         setResults(nextResults);
 
         if (user) {

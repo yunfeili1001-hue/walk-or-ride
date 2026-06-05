@@ -71,7 +71,6 @@ export default function MainPage() {
             bus={results?.bus}
             weather={results?.weather}
             walk={results?.walk}
-            walkWarning={results?.walkWarning}
             recommendation={results?.recommendation}
           />
         ) : (

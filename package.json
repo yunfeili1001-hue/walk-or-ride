@@ -1,0 +1,9 @@
+{
+  "name": "438final",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix walk-or-ride",
+    "build": "npm run build --prefix walk-or-ride",
+    "deploy": "npm run deploy --prefix walk-or-ride"
+  }
+}
