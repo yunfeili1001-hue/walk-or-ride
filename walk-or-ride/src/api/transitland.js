@@ -1,3 +1,5 @@
+import { fetchJson } from '../utils/fetchJson';
+
 const TRANSITLAND_BASE = 'https://transit.land/api/v2/rest';
 
 const LOCAL_FEED_HINTS = [
@@ -24,20 +26,22 @@ function getApiKey() {
 }
 
 async function transitlandRequest(path, params = {}) {
-  const url = new URL(`${TRANSITLAND_BASE}/${path}`);
-  url.searchParams.set('apikey', getApiKey());
-  Object.entries(params).forEach(([name, value]) => {
-    if (value !== undefined && value !== null) {
-      url.searchParams.set(name, String(value));
+  try {
+    const url = new URL(`${TRANSITLAND_BASE}/${path}`);
+    url.searchParams.set('apikey', getApiKey());
+    Object.entries(params).forEach(([name, value]) => {
+      if (value !== undefined && value !== null) {
+        url.searchParams.set(name, String(value));
+      }
+    });
+
+    return await fetchJson(url.toString(), { errorLabel: 'Bus schedule API' });
+  } catch (err) {
+    if (err instanceof Error) {
+      throw err;
     }
-  });
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Transitland request failed');
+    throw new Error('Bus schedule API request failed. Please try again.');
   }
-
-  return response.json();
 }
 
 function isLocalStop(stop) {
@@ -73,10 +77,10 @@ function getDepartureTimestamp(departure) {
 }
 
 async function getUpcomingLocalDepartures(stop) {
-  const departuresData = await transitlandRequest(
-    `stops/${stop.onestop_id}/departures`,
-    { limit: 20 },
-  );
+  const stopId = encodeURIComponent(stop.onestop_id);
+  const departuresData = await transitlandRequest(`stops/${stopId}/departures`, {
+    limit: 20,
+  });
 
   const departures = departuresData.stops?.[0]?.departures ?? [];
   const now = Date.now();
@@ -92,55 +96,62 @@ async function getUpcomingLocalDepartures(stop) {
 }
 
 export async function getBusArrival(lat, lng) {
-  const stopsData = await transitlandRequest('stops', {
-    lat,
-    lon: lng,
-    radius: 600,
-    limit: 20,
-  });
+  try {
+    const stopsData = await transitlandRequest('stops', {
+      lat,
+      lon: lng,
+      radius: 600,
+      limit: 20,
+    });
 
-  const localStops = (stopsData.stops ?? []).filter(isLocalStop);
-  if (localStops.length === 0) {
-    throw new Error('No local transit stops found near this location');
-  }
-
-  const stopsToCheck = localStops.slice(0, 8);
-  const departureLists = await Promise.all(
-    stopsToCheck.map((stop) => getUpcomingLocalDepartures(stop)),
-  );
-
-  let best = null;
-
-  departureLists.forEach((upcoming, index) => {
-    if (upcoming.length === 0) {
-      return;
+    const localStops = (stopsData.stops ?? []).filter(isLocalStop);
+    if (localStops.length === 0) {
+      throw new Error('No local transit stops found near this location');
     }
 
-    const candidate = {
-      stop: stopsToCheck[index],
-      ...upcoming[0],
+    const stopsToCheck = localStops.slice(0, 8);
+    const departureLists = await Promise.all(
+      stopsToCheck.map((stop) => getUpcomingLocalDepartures(stop)),
+    );
+
+    let best = null;
+
+    departureLists.forEach((upcoming, index) => {
+      if (upcoming.length === 0) {
+        return;
+      }
+
+      const candidate = {
+        stop: stopsToCheck[index],
+        ...upcoming[0],
+      };
+
+      if (!best || candidate.timestamp < best.timestamp) {
+        best = candidate;
+      }
+    });
+
+    if (!best) {
+      throw new Error('No upcoming local buses at nearby stops');
+    }
+
+    const next = best.departure;
+    const routeShortName = next.trip?.route?.route_short_name;
+    const hasEstimate = Boolean(
+      next.departure?.estimated_utc || next.arrival?.estimated_utc,
+    );
+
+    return {
+      route: routeShortName ? `Route ${routeShortName}` : 'Bus',
+      destination: next.trip?.trip_headsign || 'Unknown destination',
+      arrivalMinutes: Math.max(1, Math.ceil((best.timestamp - Date.now()) / 60000)),
+      stopName: best.stop.stop_name,
+      isScheduled: !hasEstimate,
     };
-
-    if (!best || candidate.timestamp < best.timestamp) {
-      best = candidate;
+  } catch (err) {
+    if (err instanceof Error) {
+      throw err;
     }
-  });
-
-  if (!best) {
-    throw new Error('No upcoming local buses at nearby stops');
+    throw new Error('Unable to load bus schedule. Please try again.');
   }
-
-  const next = best.departure;
-  const routeShortName = next.trip?.route?.route_short_name;
-  const hasEstimate = Boolean(
-    next.departure?.estimated_utc || next.arrival?.estimated_utc,
-  );
-
-  return {
-    route: routeShortName ? `Route ${routeShortName}` : 'Bus',
-    destination: next.trip?.trip_headsign || 'Unknown destination',
-    arrivalMinutes: Math.max(1, Math.ceil((best.timestamp - Date.now()) / 60000)),
-    stopName: best.stop.stop_name,
-    isScheduled: !hasEstimate,
-  };
 }

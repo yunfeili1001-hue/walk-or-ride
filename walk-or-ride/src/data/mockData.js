@@ -26,9 +26,3 @@ export const MOCK_RECOMMENDATION = {
   mode: 'walk',
   reason: 'sunny day, walk 12 minutes',
 };
-
-export const MOCK_HISTORY = [
-  { id: '1', from: 'UW Campus', to: 'Capitol Hill', result: 'walk', date: '2026-05-25' },
-  { id: '2', from: 'Pike Place', to: 'Seattle Center', result: 'bus', date: '2026-05-24' },
-  { id: '3', from: 'Westlake', to: 'Ballard', result: 'walk', date: '2026-05-23' },
-];

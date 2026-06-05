@@ -1,3 +1,5 @@
+import { fetchJson } from '../utils/fetchJson';
+
 const WEATHER_CODE_MAP = {
   0: 'Clear',
   1: 'Clear',
@@ -29,12 +31,7 @@ async function getWeatherFromOpenMeteo(lat, lng) {
   url.searchParams.set('current', 'temperature_2m,weather_code');
   url.searchParams.set('temperature_unit', 'fahrenheit');
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Weather fallback request failed');
-  }
-
-  const data = await response.json();
+  const data = await fetchJson(url.toString(), { errorLabel: 'Weather API' });
   const code = data.current?.weather_code ?? 0;
   const condition = WEATHER_CODE_MAP[code] ?? 'Clear';
 
@@ -59,12 +56,7 @@ export async function getWeather(lat, lng) {
   url.searchParams.set('units', 'imperial');
 
   try {
-    const response = await fetch(url);
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.message || `HTTP ${response.status}`);
-    }
+    const data = await fetchJson(url.toString(), { errorLabel: 'Weather API' });
 
     return {
       condition: data.weather[0].main,

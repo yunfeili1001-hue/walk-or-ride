@@ -1,5 +1,26 @@
-export function recommend(walkMinutes, busWaitMinutes, weather) {
+export function recommend(walkMinutes, busWaitMinutes, weather, { walkUnavailable = false } = {}) {
   const isRaining = ['Rain', 'Drizzle', 'Thunderstorm', 'Snow'].includes(weather);
+
+  if (walkUnavailable || walkMinutes == null) {
+    if (isRaining && busWaitMinutes <= 10) {
+      return {
+        mode: 'bus',
+        reason: `Rainy weather — take the bus (${busWaitMinutes} min wait)`,
+      };
+    }
+
+    if (busWaitMinutes <= 3) {
+      return {
+        mode: 'bus',
+        reason: `Bus arrives in ${busWaitMinutes} min — hurry to catch it!`,
+      };
+    }
+
+    return {
+      mode: 'bus',
+      reason: `Walking time unavailable — next bus in ${busWaitMinutes} min`,
+    };
+  }
 
   if (isRaining && busWaitMinutes <= 10) {
     return {

@@ -9,15 +9,18 @@ export default function ResultPanel({
   bus,
   weather,
   walk,
+  walkWarning,
   recommendation,
 }) {
+  const hasResults = !loading && bus && weather && recommendation;
+
   return (
     <WireframePanel title="Results">
       {loading && <p className="status-message">Loading walk, bus, and weather data...</p>}
       {error && !loading && <p className="status-message status-error">{error}</p>}
-      {!loading && !error && bus && weather && walk && recommendation && (
+      {hasResults && (
         <>
-          <BusInfo bus={bus} walk={walk} />
+          <BusInfo bus={bus} walk={walk} walkWarning={walkWarning} />
           <WeatherInfo weather={weather} />
           <Recommendation recommendation={recommendation} />
         </>
